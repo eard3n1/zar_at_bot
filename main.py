@@ -7,7 +7,6 @@ from response_handler import get_response
 load_dotenv()
 TOKEN = os.getenv("DISCORD")
 
-# setup the bot and commands
 intents = Intents.default()
 intents.message_content = True
 client = Client(intents=intents)
@@ -32,19 +31,40 @@ async def yardim(interaction: Interaction):
         "__*/bos_yap*__ - *(1 - 100) Botun bos yapma oranini belirler*\n"
         "__*/ping*__ - *Botun gecikme durumunu gosterir*\n"
     )
-    await interaction.response.send_message(help_text)
+    await interaction.response.send_message(
+        help_text,
+        ephemeral=True
+    )
 
 #/ command #2
 @tree.command(name="ping", description="ping durumu")
 async def ping(interaction: Interaction):
     print(f"Ping command executed, result: {round(client.latency * 1000)}ms")
-    await interaction.response.send_message(f"gecikme: {round(client.latency * 1000)}ms")
+    await interaction.response.send_message(
+        f"gecikme: {round(client.latency * 1000)}ms",
+        ephemeral=True
+    )
 
 #/ command #3
-bos_yapma_orani = 10 # Default 10%
+bos_yapma_orani = 10 # Default value assigned here for some reason
 @tree.command(name="bos_yap", description='Bos yapma orani (1 - 100), "0" ile varsayilan deger (10)')
 async def set_bos_yap(interaction: Interaction, oran: int):
     global bos_yapma_orani
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "Bu komut ozel mesajlarda kullanilamaz.",
+            ephemeral=True
+        )
+        return
+    
+    # admin prequisite (could be removed or modified as needed)
+    if not interaction.user.guild_permissions.administrator: # Could also add specific user ID check here
+        await interaction.response.send_message(
+            "Bu komutu yalnizca yoneticiler kullanabilir.",
+            ephemeral=True
+        )
+        return
 
     user = str(interaction.user)
 
@@ -60,7 +80,7 @@ async def set_bos_yap(interaction: Interaction, oran: int):
 
     else: await interaction.response.send_message('Lutfen 1 ile 100 arasinda bir deger giriniz veya "0" ile varsayilan degeri (10) kullanin')
 
-# message (receiving) & initiating send function
+# message (receiving)
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -72,7 +92,6 @@ async def on_message(message):
     server = str(message.guild)
 
     print(f'[{server}][{channel}] {username}: "{user_message}"')
-
     await send_message(message, user_message)
 
 # message (sending)
@@ -83,16 +102,22 @@ async def send_message(message, user_message):
 
     try:
         response = get_response(user_message, bos_yapma_orani)
+
+        if response is None:
+            print("No response generated")
+            return
+
         print(f"Response: {response}")
         await message.channel.send(response)
 
     except Exception as error:
-        print(f"Expected Error: {error}")
+        print(f"Error out of scope: {error}")
 
-# main
 def main():
     print("Booting up...")
     client.run(token=TOKEN)
 
 if __name__ == "__main__":
+    assert TOKEN is not None, "TOKEN was not found."
+    print("TOKEN found, starting bot...")
     main()
