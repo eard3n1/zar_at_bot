@@ -1,5 +1,5 @@
 <h1>zar_at_bot</h1>
-<p>A Turkish Discord bot that rolls dices in a humoric way.</p>
+<p>A Turkish Discord bot that rolls dices in a humorous way.</p>
 
 <h2>Features</h2>
 <ul>
